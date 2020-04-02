@@ -61,3 +61,9 @@ fabric.properties
 .gitignore
 data/ivf/2018ABascii/USAbase/
 scripts/
+logs/
+/logs/
+target/generated-sources/
+target/generated-test-sources/
+target/maven-archiver/
+target/surefire-reports/
