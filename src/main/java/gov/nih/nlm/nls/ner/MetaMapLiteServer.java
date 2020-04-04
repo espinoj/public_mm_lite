@@ -32,13 +32,13 @@ import java.util.*;
  * <h2>Using MetaMapLite from a Java program:</h2>
  * <pre>
  * Properties myProperties = MetaMapLite.getDefaultConfiguration();
- * myProperties.setProperty("opennlp.models.directory", 
+ * myProperties.setProperty("opennlp.models.directory",
  *                          "/Projects/metamaplite/data/models");
  * MetaMapLite.expandModelsDir(myProperties);
  * myProperties.setProperty("metamaplite.index.directory",
  * 		     "/Projects/metamaplite/data/ivf/strict");
  * myProperties.setProperty("metamaplite.excluded.termsfile",
- *			     "/Projects/metamaplite/data/specialterms.txt");
+ * 			     "/Projects/metamaplite/data/specialterms.txt");
  * MetaMapLite.expandIndexDir(myProperties);
  * MetaMapLite metaMapLiteInst = new MetaMapLite(myProperties);
  * BioCDocument document = FreeText.instantiateBioCDocument("FDA has strengthened the warning ...");
@@ -47,19 +47,19 @@ import java.util.*;
  * List&lt;Entity&gt; entityList = metaMapLiteInst.processDocumentList(documentList);
  * for (Entity entity: entityList) {
  *   for (Ev ev: entity.getEvSet()) {
- *	System.out.print(ev.getConceptInfo().getCUI() + "|" + entity.getMatchedText());
- *	System.out.println();
+ * 	System.out.print(ev.getConceptInfo().getCUI() + "|" + entity.getMatchedText());
+ * 	System.out.println();
  *   }
  * }
  * </pre>
  * <h2>Properties precedence (from highest to lowest)</h2>
  * <ul>
- *   <li>Command line options</li>
- *   <li>System properties</li>
- *   <li>MetaMap property file</li>
- *   <li>Defaults</li>
+ * <li>Command line options</li>
+ * <li>System properties</li>
+ * <li>MetaMap property file</li>
+ * <li>Defaults</li>
  * </ul>
- *
+ * <p>
  * <h2>Configuration Properties:</h2>
  * <dl>
  * <dt>metamaplite.semanticgroup</dt><dd>restrict output to concepts with specified semantic types</dd>
@@ -78,7 +78,7 @@ import java.util.*;
  * <dt>metamaplite.ivf.varsindex</dt><dd>location of variants to path/distance index</dd>
  * <dt>metamaplite.ivf.meshtcrelaxedindex</dt><dd>location of term to treecodes index</dd>
  * </dl>
- *
+ * <p>
  * <h2>Command line frontend properties </h2>
  * <dl>
  * <dt>metamaplite.document.inputtype</dt><dd>document input type (default: freetext)</dd>
@@ -91,7 +91,7 @@ import java.util.*;
  * <dt>metamaplite.outputformat</dt><dd>entity list result format (default: mmi)</dd>
  * <dt>metamaplite.property.file</dt><dd>load configuration from file (default: ./config/metamaplite.properties)</dd>
  * </dl>
- *
+ * <p>
  * <h2>User supplied document loader/reader properties</h2>
  * <p>
  * Properties are prefixed with string: "bioc.document.loader.freetext"
@@ -125,7 +125,9 @@ import java.util.*;
  */
 public class MetaMapLiteServer {
 
-    /** to hack in an http server to listen for files to process**/
+    /**
+     * to hack in an http server to listen for files to process
+     **/
     private static BioCDocumentLoader docLoader;
     private static MetaMapLiteServer metaMapLiteInst;
     private static boolean listSentencesOption;
@@ -137,18 +139,23 @@ public class MetaMapLiteServer {
     private static boolean indicateCitationEnd;
     private static boolean verbose;
 
-    /** log4j logger instance */
+    /**
+     * log4j logger instance
+     */
     private static final Logger logger = LogManager.getLogger(MetaMapLiteServer.class);
-    /** location of metamaplite.properties configuration file */
+    /**
+     * location of metamaplite.properties configuration file
+     */
     static String configPropertyFilename =
             System.getProperty("metamaplite.property.file", "config/metamaplite.properties");
-    static Map<String,String> outputExtensionMap = new HashMap<String,String>();
+    static Map<String, String> outputExtensionMap = new HashMap<String, String>();
+
     static {
-        outputExtensionMap.put("bioc",".bioc");
-        outputExtensionMap.put("brat",".ann");
-        outputExtensionMap.put("mmi",".mmi");
-        outputExtensionMap.put("cdi",".cdi");
-        outputExtensionMap.put("cuilist",".cuis");
+        outputExtensionMap.put("bioc", ".bioc");
+        outputExtensionMap.put("brat", ".ann");
+        outputExtensionMap.put("mmi", ".mmi");
+        outputExtensionMap.put("cdi", ".cdi");
+        outputExtensionMap.put("cuilist", ".cuis");
     }
 
     Set<String> semanticGroup = new HashSet<String>(); // initially empty
@@ -162,26 +169,32 @@ public class MetaMapLiteServer {
     SentenceAnnotator sentenceAnnotator;
     SentenceExtractor sentenceExtractor;
     EntityLookup entityLookup;
+
     enum SegmentatonType {
         SENTENCES,
         BLANKLINES,
         LINES
-    };
+    }
+
+    ;
 
     SegmentatonType segmentationMethod = SegmentatonType.SENTENCES;
 
-    /** end of citation output marker */
+    /**
+     * end of citation output marker
+     */
     public static String eotString = "<<< EOT >>>";
 
-    /** did user specify part-of-speech tagging? */
+    /**
+     * did user specify part-of-speech tagging?
+     */
     boolean addPartOfSpeechTagsFlag;
     ChunkerMethod chunkerMethod;
 
     public MetaMapLiteServer(Properties properties)
             throws ClassNotFoundException, InstantiationException,
             NoSuchMethodException, IllegalAccessException,
-            IOException
-    {
+            IOException {
         this.properties = properties;
         this.sentenceExtractor = new OpenNLPSentenceExtractor(properties);
 
@@ -192,7 +205,7 @@ public class MetaMapLiteServer {
         boolean enableScoring = false;
         if (properties.containsKey("metamaplite.outputformat")) {
             if (properties.get("metamaplite.outputformat").equals("mmi")) {
-                properties.setProperty("metamaplite.enable.scoring","true");
+                properties.setProperty("metamaplite.enable.scoring", "true");
             }
         }
         if (properties.containsKey("metamaplite.enable.scoring")) {
@@ -262,18 +275,19 @@ public class MetaMapLiteServer {
         ResultFormatterRegistry.register(properties);
 
         this.setSemanticGroup(properties.getProperty("metamaplite.semanticgroup", "all").split(","));
-        this.setSourceSet(properties.getProperty("metamaplite.sourceset","all").split(","));
+        this.setSourceSet(properties.getProperty("metamaplite.sourceset", "all").split(","));
         System.setProperty("metamaplite.result.formatter.property.brat.typename",
                 properties.getProperty("metamaplite.result.formatter.property.brat.typename",
                         "metamaplite"));
         this.detectNegationsFlag =
                 Boolean.parseBoolean(properties.getProperty("metamaplite.detect.negations", "true"));
         this.setSegmentationMethod
-                (properties.getProperty("metamaplite.segmentation.method","SENTENCE"));
+                (properties.getProperty("metamaplite.segmentation.method", "SENTENCE"));
     }
 
     /**
      * Set list of semantic types concepts must belong to be retrieved.
+     *
      * @param semanticTypeList list of semantic type strings
      */
     public void setSemanticGroup(String[] semanticTypeList) {
@@ -282,6 +296,7 @@ public class MetaMapLiteServer {
 
     /**
      * Set list of sources concepts must belong to be retrieved.
+     *
      * @param sourceList list of source strings
      */
     public void setSourceSet(String[] sourceList) {
@@ -296,6 +311,7 @@ public class MetaMapLiteServer {
      * <dt><tt>BLANKLINES</tt> <dd>seqment text using blank lines as delimitor
      * <dt><tt>LINES</tt>      <dd>seqment text using newlines as delimitor
      * </dl>
+     *
      * @param typeName name of segmentation method to use
      */
     public void setSegmentationMethod(String typeName) {
@@ -310,18 +326,18 @@ public class MetaMapLiteServer {
 
     /**
      * Invoke sentence processing pipeline on a sentence
+     *
      * @param sentence BioC sentence containing passage
-     * @param passage BioC sentence containing sentences
+     * @param passage  BioC sentence containing sentences
      * @return updated sentence
-     * @throws Exception general exception
-     * @throws IOException IO Exception
-     * @throws IllegalAccessException illegal access of class
+     * @throws Exception                 general exception
+     * @throws IOException               IO Exception
+     * @throws IllegalAccessException    illegal access of class
      * @throws InvocationTargetException exception while invoking target class
      */
     public BioCSentence processSentence(BioCSentence sentence, BioCPassage passage)
             throws IllegalAccessException, InvocationTargetException,
-            IOException, Exception
-    {
+            IOException, Exception {
         logger.debug("enter processSentence");
         // BioCSentence annotatedSentence = SentenceAnnotator.tokenizeSentence(passage, sentence);
         BioCSentence result0 =
@@ -329,7 +345,7 @@ public class MetaMapLiteServer {
         // System.out.println("unfiltered entity list: ");
         // Brat.listEntities(result0);
         BioCSentence result = result0;
-        if ((! this.semanticGroup.contains("all")) &&
+        if ((!this.semanticGroup.contains("all")) &&
                 (this.semanticGroup.size() > 0)) {
             result = SemanticGroupFilter.keepEntitiesInSemanticGroup
                     (this.semanticGroup, result0);
@@ -347,24 +363,24 @@ public class MetaMapLiteServer {
 
     /**
      * Invoke sentence processing pipeline on each sentence in supplied sentence list.
+     *
      * @param passage containing list of sentences
      * @return list of results from sentence processing pipeline, one per sentence in input list.
-     * @throws IllegalAccessException illegal access of class
+     * @throws IllegalAccessException    illegal access of class
      * @throws InvocationTargetException exception while invoking target class
-     * @throws Exception general exception
-     * @throws IOException IO Exception
+     * @throws Exception                 general exception
+     * @throws IOException               IO Exception
      */
     public BioCPassage processSentences(BioCPassage passage)
-            throws IllegalAccessException, InvocationTargetException, IOException, Exception
-    {
+            throws IllegalAccessException, InvocationTargetException, IOException, Exception {
         logger.debug("enter processSentences");
         List<BioCSentence> resultList = new ArrayList<BioCSentence>();
-        for (BioCSentence sentence: passage.getSentences()) {
+        for (BioCSentence sentence : passage.getSentences()) {
             logger.info("Processing: " + sentence.getText());
             resultList.add(this.processSentence(sentence, passage));
         }
     /*passage.setSentences(resultList);*/
-        for (BioCSentence sentence: resultList) {
+        for (BioCSentence sentence : resultList) {
             passage.addSentence(sentence);
         }
         logger.debug("exit processSentences");
@@ -372,8 +388,7 @@ public class MetaMapLiteServer {
     }
 
     public List<Entity> processPassage(BioCPassage passage)
-            throws IllegalAccessException, InvocationTargetException, IOException, Exception
-    {
+            throws IllegalAccessException, InvocationTargetException, IOException, Exception {
         logger.debug("enter processPassage");
         logger.debug(passage.getText());
         BioCPassage passage0;
@@ -393,7 +408,7 @@ public class MetaMapLiteServer {
                 passageOffset = passage.getOffset();
                 text = passage.getText();
                 segmentList = text.split("\n\n");
-                for (String segment: segmentList) {
+                for (String segment : segmentList) {
                     BioCSentence sentence = new BioCSentence();
                     offset = text.indexOf(segment, offset);
                     sentence.setOffset(offset);
@@ -411,7 +426,7 @@ public class MetaMapLiteServer {
                 passageOffset = passage.getOffset();
                 text = passage.getText();
                 segmentList = text.split("\n");
-                for (String segment: segmentList) {
+                for (String segment : segmentList) {
                     offset = text.indexOf(segment, offset);
                     if (segment.trim().length() > 0) {
                         BioCSentence sentence = new BioCSentence();
@@ -439,25 +454,25 @@ public class MetaMapLiteServer {
                 break;
         }
         BioCPassage passageWithSentsAndAbbrevs = new BioCPassage();
-        passageWithSentsAndAbbrevs.setInfons( passage0.getInfons() );
-        passageWithSentsAndAbbrevs.setOffset( passage0.getOffset() );
-        passageWithSentsAndAbbrevs.setText( passage0.getText() );
-        for (BioCAnnotation note : passage0.getAnnotations() ) {
-            passageWithSentsAndAbbrevs.addAnnotation( abbrConverter.getAnnotation(note) );
+        passageWithSentsAndAbbrevs.setInfons(passage0.getInfons());
+        passageWithSentsAndAbbrevs.setOffset(passage0.getOffset());
+        passageWithSentsAndAbbrevs.setText(passage0.getText());
+        for (BioCAnnotation note : passage0.getAnnotations()) {
+            passageWithSentsAndAbbrevs.addAnnotation(abbrConverter.getAnnotation(note));
         }
-        for (BioCRelation rel : passage0.getRelations() ) {
+        for (BioCRelation rel : passage0.getRelations()) {
             passageWithSentsAndAbbrevs.addRelation(rel);
         }
-        for (BioCSentence sentence: passage0.getSentences()) {
+        for (BioCSentence sentence : passage0.getSentences()) {
             // Find any abbreviations in sentence and add them as annotations referenced by relations.
             BioCSentence newSentence = abbrConverter.getSentence(sentence);
             passageWithSentsAndAbbrevs.addSentence(newSentence);
             // Copy any annotations from sentences to passage.
-            for (BioCAnnotation note : newSentence.getAnnotations() ) {
-                passageWithSentsAndAbbrevs.addAnnotation( abbrConverter.getAnnotation(note) );
+            for (BioCAnnotation note : newSentence.getAnnotations()) {
+                passageWithSentsAndAbbrevs.addAnnotation(abbrConverter.getAnnotation(note));
             }
             // Copy any relations from sentences to passage.
-            for (BioCRelation rel : newSentence.getRelations() ) {
+            for (BioCRelation rel : newSentence.getRelations()) {
                 passageWithSentsAndAbbrevs.addRelation(rel);
             }
         }
@@ -476,18 +491,17 @@ public class MetaMapLiteServer {
     }
 
     public List<Entity> processDocument(BioCDocument document)
-            throws IllegalAccessException, InvocationTargetException, IOException, Exception
-    {
+            throws IllegalAccessException, InvocationTargetException, IOException, Exception {
         if (Boolean.parseBoolean(this.getProperties().getProperty("metamaplite.enable.scoring"))) {
             // Don't re-instantiate EntityLookup5 if instance exists.
             if ((this.entityLookup == null) ||
-                    (! (this.entityLookup instanceof EntityLookup5))) {
+                    (!(this.entityLookup instanceof EntityLookup5))) {
                 this.entityLookup = new EntityLookup5(properties);
             }
         } else {
             // Don't re-instantiate EntityLookup4 if instance exists.
             if ((this.entityLookup == null) ||
-                    (! (this.entityLookup instanceof EntityLookup4))) {
+                    (!(this.entityLookup instanceof EntityLookup4))) {
                 this.entityLookup = new EntityLookup4(properties);
             }
         }
@@ -498,15 +512,15 @@ public class MetaMapLiteServer {
             document.setID("0000000.TXT");
         }
         // add docid to passage info namespace (infons)
-        Map<String,String> docInfoMap = document.getInfons();
+        Map<String, String> docInfoMap = document.getInfons();
         if (docInfoMap == null) {
-            docInfoMap = new HashMap<String,String>();
+            docInfoMap = new HashMap<String, String>();
             document.setInfons(docInfoMap);
         }
         docInfoMap.put("docid", document.getID());
-        for (BioCPassage passage: document.getPassages()) {
-            Map<String,String> passageInfons = passage.getInfons();
-            if (! passageInfons.containsKey("docid")) {
+        for (BioCPassage passage : document.getPassages()) {
+            Map<String, String> passageInfons = passage.getInfons();
+            if (!passageInfons.containsKey("docid")) {
                 passageInfons.put("docid", document.getID());
             }
             entityList.addAll(processPassage(passage));
@@ -515,22 +529,21 @@ public class MetaMapLiteServer {
     }
 
     public List<Entity> processDocumentList(List<BioCDocument> documentList)
-            throws IllegalAccessException, InvocationTargetException, IOException, Exception
-    {
+            throws IllegalAccessException, InvocationTargetException, IOException, Exception {
         if (Boolean.parseBoolean(this.getProperties().getProperty("metamaplite.enable.scoring"))) {
             // Don't re-instantiate EntityLookup5 if instance exists.
             if ((this.entityLookup == null) ||
-                    (! (this.entityLookup instanceof EntityLookup5))) {
+                    (!(this.entityLookup instanceof EntityLookup5))) {
                 this.entityLookup = new EntityLookup5(properties);
             }
         } else {
             if ((this.entityLookup == null) ||
-                    (! (this.entityLookup instanceof EntityLookup4))) {
+                    (!(this.entityLookup instanceof EntityLookup4))) {
                 this.entityLookup = new EntityLookup4(properties);
             }
         }
         List<Entity> entityList = new ArrayList<Entity>();
-        for (BioCDocument document: documentList) {
+        for (BioCDocument document : documentList) {
             entityList.addAll(this.processDocument(document));
         }
         return entityList;
@@ -538,8 +551,8 @@ public class MetaMapLiteServer {
 
     public List<Sentence> getSentenceList(List<BioCDocument> documentList) {
         List<Sentence> sentenceList = new ArrayList<Sentence>();
-        for (BioCDocument document: documentList) {
-            for (BioCPassage passage: document.getPassages()) {
+        for (BioCDocument document : documentList) {
+            for (BioCPassage passage : document.getPassages()) {
                 sentenceList.addAll(this.sentenceExtractor.createSentenceList(passage.getText(), passage.getOffset()));
             }
         }
@@ -547,10 +560,10 @@ public class MetaMapLiteServer {
     }
 
     public List<AbbrInfo> getAcronymList(List<BioCDocument> documentList) {
-        List <AbbrInfo> infos = new ArrayList<AbbrInfo>();
-        for (BioCDocument document: documentList) {
-            for (BioCPassage passage: document.getPassages()) {
-                for (Sentence sentence: this.sentenceExtractor.createSentenceList(passage.getText())) {
+        List<AbbrInfo> infos = new ArrayList<AbbrInfo>();
+        for (BioCDocument document : documentList) {
+            for (BioCPassage passage : document.getPassages()) {
+                for (Sentence sentence : this.sentenceExtractor.createSentenceList(passage.getText())) {
                     infos.addAll(extractAbbr.extractAbbrPairsString(sentence.getText()));
                 }
             }
@@ -559,8 +572,7 @@ public class MetaMapLiteServer {
     }
 
     public static List<String> loadInputFileList(String inputfileListFileName)
-            throws FileNotFoundException, IOException
-    {
+            throws FileNotFoundException, IOException {
         List<String> inputFileList = new ArrayList<String>();
         BufferedReader br =
                 new BufferedReader(new FileReader(inputfileListFileName));
@@ -581,7 +593,7 @@ public class MetaMapLiteServer {
         System.err.println("  --freetext (default)");
         System.err.println("  --inputformat=<document type>");
         System.err.println("    Available document types:");
-        for (String name: BioCDocumentLoaderRegistry.listNameSet()) {
+        for (String name : BioCDocumentLoaderRegistry.listNameSet()) {
             System.err.println("      " + name);
         }
         System.err.println("output options:");
@@ -592,7 +604,7 @@ public class MetaMapLiteServer {
         //    System.err.println("  --luceneresultlen");
         System.err.println("  --outputformat=<format type>");
         System.err.println("    Available format types:");
-        for (String name: ResultFormatterRegistry.listNameSet()) {
+        for (String name : ResultFormatterRegistry.listNameSet()) {
             System.err.println("      " + name);
         }
         System.err.println("processing options:");
@@ -634,10 +646,12 @@ public class MetaMapLiteServer {
             properties.setProperty("opennlp.en-chunker.bin.path", modelsDir + "/en-chunker.bin");
         }
     }
+
     public static void expandModelsDir(Properties properties) {
         String modelsDir = properties.getProperty("opennlp.models.directory");
         expandModelsDir(properties, modelsDir);
     }
+
     public static void expandIndexDir(Properties properties, String indexDirName) {
         if (indexDirName != null) {
             properties.setProperty("metamaplite.ivf.cuiconceptindex", indexDirName + "/indices/cuiconcept");
@@ -648,6 +662,7 @@ public class MetaMapLiteServer {
             properties.setProperty("metamaplite.ivf.meshtcrelaxedindex", indexDirName + "/indices/meshtcrelaxed");
         }
     }
+
     public static void expandIndexDir(Properties properties) {
         String indexDirName = properties.getProperty("metamaplite.index.directory");
         expandIndexDir(properties, indexDirName);
@@ -655,12 +670,14 @@ public class MetaMapLiteServer {
 
     public static void displayProperties(String label, Properties properties) {
         System.out.println(label);
-        for (String name: properties.stringPropertyNames()) {
+        for (String name : properties.stringPropertyNames()) {
             System.out.println("   " + name + ": " + properties.getProperty(name));
         }
     }
 
-    /** get current properties of MetaMapLite instance
+    /**
+     * get current properties of MetaMapLite instance
+     *
      * @return properties instance.
      */
     public Properties getProperties() {
@@ -678,7 +695,7 @@ public class MetaMapLiteServer {
         defaultConfiguration.setProperty("metamaplite.index.directory", indexDirectory);
         defaultConfiguration.setProperty("metamaplite.document.inputtype", "freetext");
         defaultConfiguration.setProperty("metamaplite.outputformat", "mmi");
-        defaultConfiguration.setProperty("metamaplite.outputextension",  ".mmi");
+        defaultConfiguration.setProperty("metamaplite.outputextension", ".mmi");
         defaultConfiguration.setProperty("metamaplite.semanticgroup", "all");
         defaultConfiguration.setProperty("metamaplite.sourceset", "all");
         defaultConfiguration.setProperty("metamaplite.segmentation.method", "SENTENCES");
@@ -731,8 +748,7 @@ public class MetaMapLiteServer {
                                        Properties systemConfiguration,
                                        Properties optionsConfiguration,
                                        boolean verbose)
-            throws IOException, FileNotFoundException
-    {
+            throws IOException, FileNotFoundException {
         // Attempt to get local configuration from properties file on
         // classpath and then from file system.  file system has
         // precedence of classpath and gets loaded last (if it exists).
@@ -741,12 +757,12 @@ public class MetaMapLiteServer {
         // check classpath for "metamaplite.properties" resource
         // get class loader
         ClassLoader loader = MetaMapLiteServer.class.getClassLoader();
-        if(loader==null)
+        if (loader == null)
             loader = ClassLoader.getSystemClassLoader(); // use system class loader if class loader is null
         java.net.URL url = loader.getResource(propertiesFilename);
         try {
             localConfiguration.load(url.openStream());
-        } catch(Exception e) {
+        } catch (Exception e) {
             logger.info("Could not load configuration file from classpath: " + propertiesFilename);
         }
 
@@ -788,12 +804,11 @@ public class MetaMapLiteServer {
     void listEntities(List<BioCDocument> documentList,
                       PrintWriter pw,
                       String outputFormatOption)
-            throws IllegalAccessException, InvocationTargetException, IOException, Exception
-    {
+            throws IllegalAccessException, InvocationTargetException, IOException, Exception {
         // process documents
         List<Entity> entityList = this.processDocumentList(documentList);
 
-        logger.info("outputing results to standard output." );
+        logger.info("outputing results to standard output.");
         // format output
         ResultFormatter formatter = ResultFormatterRegistry.get(outputFormatOption);
         if (formatter != null) {
@@ -805,17 +820,18 @@ public class MetaMapLiteServer {
         pw.flush();
     }
 
-    /** list entities using document list from stdin
+    /**
+     * list entities using document list from stdin
+     *
      * @param documentList list of BioC documents
      */
-    void listSentences(List<BioCDocument> documentList)
-    {
+    void listSentences(List<BioCDocument> documentList) {
         // output results for file
         // create output filename
         logger.info("outputing results to Standard Output");
         PrintWriter pw = new PrintWriter(new OutputStreamWriter(System.out,
                 Charset.forName("utf-8")));
-        for (Sentence sent: this.getSentenceList(documentList)) {
+        for (Sentence sent : this.getSentenceList(documentList)) {
             pw.println(sent.getOffset() + "|" + sent.getText().length() + "|" + sent.getText());
         }
         pw.flush();
@@ -824,25 +840,24 @@ public class MetaMapLiteServer {
     void listAcronyms(List<BioCDocument> documentList) {
         PrintWriter pw = new PrintWriter(new OutputStreamWriter(System.out,
                 Charset.forName("utf-8")));
-        for (AbbrInfo acronym: this.getAcronymList(documentList)) {
+        for (AbbrInfo acronym : this.getAcronymList(documentList)) {
             pw.println(acronym.shortForm + "|" + acronym.shortFormIndex + "|" +
-                    acronym.longForm.replace("\n", " ") + "|" + acronym.longFormIndex );
+                    acronym.longForm.replace("\n", " ") + "|" + acronym.longFormIndex);
         }
         pw.flush();
         pw.close();
     }
 
     void listSentencesWithPosTags(List<BioCDocument> documentList)
-            throws IOException
-    {
+            throws IOException {
         this.sentenceAnnotator = new OpenNLPPoSTagger(properties);
         logger.info("outputing results to Standard Output");
         PrintWriter pw = new PrintWriter(new OutputStreamWriter(System.out,
                 Charset.forName("utf-8")));
-        for (Sentence sent: this.getSentenceList(documentList)) {
+        for (Sentence sent : this.getSentenceList(documentList)) {
             List<ERToken> tokenList = sentenceAnnotator.addPartOfSpeech(sent);
             pw.println(sent.getOffset() + "|" + sent.getText().length() + "|" + sent.getText());
-            for (ERToken token: tokenList) {
+            for (ERToken token : tokenList) {
                 pw.print(token.getText() + "(" + token.getPartOfSpeech() + "),");
             }
             pw.println();
@@ -851,8 +866,7 @@ public class MetaMapLiteServer {
     }
 
     void listChunks(List<BioCDocument> documentList)
-            throws IOException
-    {
+            throws IOException {
         logger.info("outputing results to Standard Output");
         PrintWriter pw = new PrintWriter(new OutputStreamWriter(System.out,
                 Charset.forName("utf-8")));
@@ -861,9 +875,8 @@ public class MetaMapLiteServer {
     }
 
     void listEntities(List<BioCDocument> documentList, String outputFormatOption)
-            throws IllegalAccessException, InvocationTargetException, IOException, Exception
-    {
-        logger.info("outputing results to standard output." );
+            throws IllegalAccessException, InvocationTargetException, IOException, Exception {
+        logger.info("outputing results to standard output.");
 
         // output results for file
         PrintWriter pw = new PrintWriter(new OutputStreamWriter(System.out,
@@ -871,23 +884,24 @@ public class MetaMapLiteServer {
         listEntities(documentList, pw, outputFormatOption);
     }
 
-    /** list entities using document list from stdin
-     * @param filename filename
+    /**
+     * list entities using document list from stdin
+     *
+     * @param filename     filename
      * @param documentList list of BioC documents
      * @throws IOException i/o exception
      */
     void listSentences(String filename,
                        List<BioCDocument> documentList)
-            throws IOException
-    {
+            throws IOException {
         // output results for file
         // create output filename
-        String basename = filename.substring(0,filename.lastIndexOf(".")); //
+        String basename = filename.substring(0, filename.lastIndexOf(".")); //
         String outputFilename = basename + ".sentences";
         logger.info("outputing results to " + outputFilename);
         PrintWriter pw = new PrintWriter(new BufferedWriter
                 (new FileWriter(outputFilename)));
-        for (Sentence sent: this.getSentenceList(documentList)) {
+        for (Sentence sent : this.getSentenceList(documentList)) {
             pw.println(sent.getOffset() + "|" + sent.getText().length() + "|" + sent.getText());
         }
         pw.close();
@@ -895,34 +909,32 @@ public class MetaMapLiteServer {
 
     void listAcronyms(String filename,
                       List<BioCDocument> documentList)
-            throws IOException
-    {
-        String basename = filename.substring(0,filename.lastIndexOf(".")); //
+            throws IOException {
+        String basename = filename.substring(0, filename.lastIndexOf(".")); //
         String outputFilename = basename + ".acronyms";
         PrintWriter pw = new PrintWriter(new BufferedWriter
                 (new FileWriter(outputFilename)));
-        for (AbbrInfo acronym: this.getAcronymList(documentList)) {
+        for (AbbrInfo acronym : this.getAcronymList(documentList)) {
             pw.println(acronym.shortForm + "|" + acronym.shortFormIndex + "|" +
-                    acronym.longForm + "|" + acronym.longFormIndex );
+                    acronym.longForm + "|" + acronym.longFormIndex);
         }
         pw.close();
     }
 
     void listSentencesWithPosTags(String filename,
                                   List<BioCDocument> documentList)
-            throws IOException
-    {
+            throws IOException {
         // output results for file
         // create output filename
-        String basename = filename.substring(0,filename.lastIndexOf(".")); //
+        String basename = filename.substring(0, filename.lastIndexOf(".")); //
         String outputFilename = basename + ".sentences";
         logger.info("outputing results to " + outputFilename);
         PrintWriter pw = new PrintWriter(new BufferedWriter
                 (new FileWriter(outputFilename)));
-        for (Sentence sent: this.getSentenceList(documentList)) {
+        for (Sentence sent : this.getSentenceList(documentList)) {
             List<ERToken> tokenList = sentenceAnnotator.addPartOfSpeech(sent);
             pw.println(sent.getOffset() + "|" + sent.getText().length() + "|" + sent.getText());
-            for (ERToken token: tokenList) {
+            for (ERToken token : tokenList) {
                 pw.print(token.getText() + "(" + token.getPartOfSpeech() + "),");
             }
             pw.println();
@@ -932,29 +944,28 @@ public class MetaMapLiteServer {
 
     void listChunks(PrintWriter pw,
                     List<BioCDocument> documentList)
-            throws IOException
-    {
+            throws IOException {
         this.sentenceAnnotator = new OpenNLPPoSTagger(properties);
         this.chunkerMethod = new OpenNLPChunker(properties);
-        for (Sentence sent: this.getSentenceList(documentList)) {
+        for (Sentence sent : this.getSentenceList(documentList)) {
             List<ERToken> sentenceTokenList = sentenceAnnotator.addPartOfSpeech(sent);
             pw.println(sent.getOffset() + "|" + sent.getText().length() + "|" + sent.getText());
             pw.println("--tokenlist--");
             List<ERToken> minimalSentenceTokenList = new ArrayList<ERToken>();
-            for (ERToken token: sentenceTokenList) {
-                if (! token.getTokenClass().equals("ws")) { // only keep non-ws tokens
+            for (ERToken token : sentenceTokenList) {
+                if (!token.getTokenClass().equals("ws")) { // only keep non-ws tokens
                     minimalSentenceTokenList.add(token);
                 }
             }
             sentenceAnnotator.addPartOfSpeech(minimalSentenceTokenList);
-            for (ERToken token: minimalSentenceTokenList) {
+            for (ERToken token : minimalSentenceTokenList) {
                 pw.print(token.getText() + "(" + token.getPartOfSpeech() + "),");
             }
             pw.println("--");
             pw.println("--phraselist--");
             logger.debug("minimalSentenceTokenList: " + minimalSentenceTokenList);
             List<Phrase> phraseList = this.chunkerMethod.applyChunker(minimalSentenceTokenList);
-            for (Phrase phrase: phraseList) {
+            for (Phrase phrase : phraseList) {
                 pw.println("phrase: " + phrase.toString());
             }
             pw.println("-----------");
@@ -964,12 +975,11 @@ public class MetaMapLiteServer {
 
     void listChunks(String filename,
                     List<BioCDocument> documentList)
-            throws IOException
-    {
+            throws IOException {
 
         // output results for file
         // create output filename
-        String basename = filename.substring(0,filename.lastIndexOf(".")); //
+        String basename = filename.substring(0, filename.lastIndexOf(".")); //
         String outputFilename = basename + ".chunks";
         logger.info("outputing results to " + outputFilename);
         PrintWriter pw = new PrintWriter(new BufferedWriter
@@ -982,12 +992,11 @@ public class MetaMapLiteServer {
                       List<BioCDocument> documentList,
                       String outputExtension,
                       String outputFormatOption)
-            throws IOException, IllegalAccessException, InvocationTargetException, Exception
-    {
+            throws IOException, IllegalAccessException, InvocationTargetException, Exception {
         String basename = "output";
         // create output filename
         if (filename.lastIndexOf(".") >= 0) {
-            basename = filename.substring(0,filename.lastIndexOf(".")); //
+            basename = filename.substring(0, filename.lastIndexOf(".")); //
         } else {
             basename = filename;
         }
@@ -1006,12 +1015,11 @@ public class MetaMapLiteServer {
                       String outputExtension,
                       String outputFormatOption,
                       boolean indicateCitationEnd)
-            throws IOException, IllegalAccessException, InvocationTargetException, Exception
-    {
+            throws IOException, IllegalAccessException, InvocationTargetException, Exception {
         String basename = "output";
         // create output filename
         if (filename.lastIndexOf(".") >= 0) {
-            basename = filename.substring(0,filename.lastIndexOf(".")); //
+            basename = filename.substring(0, filename.lastIndexOf(".")); //
         } else {
             basename = filename;
         }
@@ -1032,8 +1040,7 @@ public class MetaMapLiteServer {
                       List<BioCDocument> documentList,
                       String outputFormatOption,
                       boolean indicateCitationEnd)
-            throws IOException, IllegalAccessException, InvocationTargetException, Exception
-    {
+            throws IOException, IllegalAccessException, InvocationTargetException, Exception {
         logger.info("outputing results to " + outputFilename);
 
         // output results for file
@@ -1049,8 +1056,7 @@ public class MetaMapLiteServer {
     void listEntities(String outputFilename,
                       List<BioCDocument> documentList,
                       String outputFormatOption)
-            throws IOException, IllegalAccessException, InvocationTargetException, Exception
-    {
+            throws IOException, IllegalAccessException, InvocationTargetException, Exception {
         logger.info("outputing results to " + outputFilename);
 
         // output results for file
@@ -1066,14 +1072,14 @@ public class MetaMapLiteServer {
     void logCacheInfo() {
         if (entityLookup instanceof EntityLookup4) {
             logger.info("cui -> preferred-name cache size: " +
-                    ((EntityLookup4)entityLookup).cuiPreferredNameCache.cuiPreferredNameCache.size());
+                    ((EntityLookup4) entityLookup).cuiPreferredNameCache.cuiPreferredNameCache.size());
             logger.info("term -> concept cache size: " +
-                    ((EntityLookup4)entityLookup).termConceptInfoCache.termConceptCache.size());
+                    ((EntityLookup4) entityLookup).termConceptInfoCache.termConceptCache.size());
         } else if (entityLookup instanceof EntityLookup5) {
             logger.info("cui -> preferred-name cache size: " +
-                    ((EntityLookup5)entityLookup).cuiPreferredNameCache.cuiPreferredNameCache.size());
+                    ((EntityLookup5) entityLookup).cuiPreferredNameCache.cuiPreferredNameCache.size());
             logger.info("term -> concept cache size: " +
-                    ((EntityLookup5)entityLookup).termConceptInfoCache.termConceptCache.size());
+                    ((EntityLookup5) entityLookup).termConceptInfoCache.termConceptCache.size());
 
         }
         logger.info("string -> normalized string cache size: " +
@@ -1114,23 +1120,23 @@ public class MetaMapLiteServer {
      * <pre>
      * gov.nih.nlm.nls.metamap.lite.EntityAnnotation.displayEntitySet)
      * </pre>
+     *
      * @param args - Arguments passed from the command line
-     * @throws Exception general exception
-     * @throws ClassNotFoundException class not found exception
-     * @throws FileNotFoundException File Not Found Exception
-     * @throws IOException IO Exception
-     * @throws IllegalAccessException illegal access of class
-     * @throws InstantiationException exception instantiating instance of class
+     * @throws Exception                 general exception
+     * @throws ClassNotFoundException    class not found exception
+     * @throws FileNotFoundException     File Not Found Exception
+     * @throws IOException               IO Exception
+     * @throws IllegalAccessException    illegal access of class
+     * @throws InstantiationException    exception instantiating instance of class
      * @throws InvocationTargetException exception while invoking target class
-     * @throws NoSuchMethodException  no method in class
+     * @throws NoSuchMethodException     no method in class
      */
     public static void main(String[] args)
             throws IOException, FileNotFoundException,
             ClassNotFoundException, InstantiationException,
             NoSuchMethodException, IllegalAccessException,
             InvocationTargetException,
-            Exception
-    {
+            Exception {
         Properties defaultConfiguration = getDefaultConfiguration();
         if (args.length > 0) {
             verbose = false;
@@ -1142,7 +1148,7 @@ public class MetaMapLiteServer {
             int i = 0;
             while (i < args.length) {
                 if (args[i].length() > 1) {
-                    if (args[i].substring(0,2).equals("--")) {
+                    if (args[i].substring(0, 2).equals("--")) {
                         String[] fields = args[i].split("=");
                         if (fields[0].equals("--") ||
                                 fields[0].equals("--pipe")) {
@@ -1151,32 +1157,32 @@ public class MetaMapLiteServer {
                                 fields[0].equals("--propertiesfile")) {
                             propertiesFilename = fields[1];
                         } else if (fields[0].equals("--log4jconfig")) {
-                            optionsConfiguration.setProperty ("metamaplite.log4jconfig",fields[1]);
+                            optionsConfiguration.setProperty("metamaplite.log4jconfig", fields[1]);
                         } else if (fields[0].equals("--indexdir")) {
-                            optionsConfiguration.setProperty ("metamaplite.index.directory",fields[1]);
+                            optionsConfiguration.setProperty("metamaplite.index.directory", fields[1]);
                         } else if (fields[0].equals("--modelsdir")) {
-                            optionsConfiguration.setProperty ("opennlp.models.directory",fields[1]);
+                            optionsConfiguration.setProperty("opennlp.models.directory", fields[1]);
                         } else if (fields[0].equals("--specialtermsfile")) {
-                            optionsConfiguration.setProperty ("metamaplite.excluded.termsfile",fields[1]);
+                            optionsConfiguration.setProperty("metamaplite.excluded.termsfile", fields[1]);
                         } else if (fields[0].equals("--inputdocformat") ||
                                 fields[0].equals("--inputformat")) {
-                            optionsConfiguration.setProperty ("metamaplite.document.inputtype",fields[1]);
+                            optionsConfiguration.setProperty("metamaplite.document.inputtype", fields[1]);
                         } else if (fields[0].equals("--segmentation_method")) {
-                            optionsConfiguration.setProperty ("metamaplite.segmentation.method",fields[1]);
+                            optionsConfiguration.setProperty("metamaplite.segmentation.method", fields[1]);
                         } else if (fields[0].equals("--segment_sentences")) {
-                            optionsConfiguration.setProperty ("metamaplite.segmentation.method","SENTENCES");
+                            optionsConfiguration.setProperty("metamaplite.segmentation.method", "SENTENCES");
                         } else if (fields[0].equals("--segment_blanklines")) {
-                            optionsConfiguration.setProperty ("metamaplite.segmentation.method","BLANKLINES");
+                            optionsConfiguration.setProperty("metamaplite.segmentation.method", "BLANKLINES");
                         } else if (fields[0].equals("--segment_lines")) {
-                            optionsConfiguration.setProperty ("metamaplite.segmentation.method","LINES");
+                            optionsConfiguration.setProperty("metamaplite.segmentation.method", "LINES");
                         } else if (fields[0].equals("--enable_scoring")) {
-                            optionsConfiguration.setProperty ("metamaplite.enable.scoring","true");
+                            optionsConfiguration.setProperty("metamaplite.enable.scoring", "true");
                         } else if (fields[0].equals("--indicate_citation_end")) {
-                            optionsConfiguration.setProperty ("metamaplite.indicate.citation.end","true");
+                            optionsConfiguration.setProperty("metamaplite.indicate.citation.end", "true");
                         } else if (fields[0].equals("--freetext")) {
-                            optionsConfiguration.setProperty ("metamaplite.document.inputtype","freetext");
+                            optionsConfiguration.setProperty("metamaplite.document.inputtype", "freetext");
                         } else if (fields[0].equals("--outputformat")) {
-                            optionsConfiguration.setProperty("metamaplite.outputformat",fields[1]);
+                            optionsConfiguration.setProperty("metamaplite.outputformat", fields[1]);
                             optionsConfiguration.setProperty("metamaplite.outputextension",
                                     (outputExtensionMap.containsKey(fields[1]) ?
                                             outputExtensionMap.get(fields[1]) :
@@ -1185,21 +1191,21 @@ public class MetaMapLiteServer {
                                 fields[0].equals("--cdi") ||
                                 fields[0].equals("--bc") ||
                                 fields[0].equals("--bcevaluate")) {
-                            optionsConfiguration.setProperty("metamaplite.outputformat","bioc");
+                            optionsConfiguration.setProperty("metamaplite.outputformat", "bioc");
                             optionsConfiguration.setProperty("metamaplite.outputextension",
                                     (outputExtensionMap.containsKey("cdi") ?
                                             outputExtensionMap.get("cdi") :
                                             ".ann"));
                         } else if (fields[0].equals("--brat") ||
                                 fields[0].equals("--BRAT")) {
-                            optionsConfiguration.setProperty("metamaplite.outputformat","brat");
+                            optionsConfiguration.setProperty("metamaplite.outputformat", "brat");
                             optionsConfiguration.setProperty("metamaplite.outputextension",
                                     (outputExtensionMap.containsKey("brat") ?
                                             outputExtensionMap.get("brat") :
                                             ".ann"));
                         } else if (fields[0].equals("--mmi") ||
                                 fields[0].equals("--mmilike")) {
-                            optionsConfiguration.setProperty("metamaplite.outputformat","mmi");
+                            optionsConfiguration.setProperty("metamaplite.outputformat", "mmi");
                             optionsConfiguration.setProperty("metamaplite.outputextension",
                                     (outputExtensionMap.containsKey("mmi") ?
                                             outputExtensionMap.get("mmi") :
@@ -1220,9 +1226,9 @@ public class MetaMapLiteServer {
                             optionsConfiguration.setProperty("metamaplite.negation.detector",
                                     "gov.nih.nlm.nls.metamap.lite.context.ContextWrapper");
                         } else if (fields[0].equals("--enable_postagging")) {
-                            optionsConfiguration.setProperty("metamaplite.enable.postagging",fields[1]);
+                            optionsConfiguration.setProperty("metamaplite.enable.postagging", fields[1]);
                         } else if (fields[0].equals("--disable_chunker")) {
-                            optionsConfiguration.setProperty("metamaplite.disable.chunker","true");
+                            optionsConfiguration.setProperty("metamaplite.disable.chunker", "true");
                         } else if (fields[0].equals("--brat_type_name")) {
                             optionsConfiguration.setProperty("metamaplite.brat.typename", fields[1]);
                         } else if (args[i].equals("--filelist")) {
@@ -1259,7 +1265,7 @@ public class MetaMapLiteServer {
                             if (fields.length < 3) {
                                 System.err.println("not enough arguments in \"" + args[i] + "\" option");
                             } else {
-                                optionsConfiguration.setProperty(fields[1],fields[2]);
+                                optionsConfiguration.setProperty(fields[1], fields[2]);
                             }
                         } else if (args[i].equals("--scheduler")) { // files from scheduler
                             fromScheduler = true;
@@ -1279,8 +1285,8 @@ public class MetaMapLiteServer {
                             System.err.println("unknown option: " + args[i]);
                             System.exit(1);
                         }
-                    } else if (args[i].substring(0,2).equals("-E")) { // print ">>> EOT <<<" for the scheduler
-                        optionsConfiguration.setProperty ("metamaplite.indicate.citation.end","true");
+                    } else if (args[i].substring(0, 2).equals("-E")) { // print ">>> EOT <<<" for the scheduler
+                        optionsConfiguration.setProperty("metamaplite.indicate.citation.end", "true");
                     } else {
                         if (inputFromStdin) {
                             System.err.println("unexpected filename in command line argument list: " + args[i]);
@@ -1306,7 +1312,7 @@ public class MetaMapLiteServer {
             BioCDocumentLoaderRegistry.register(properties);
 
             String documentInputOption = properties.getProperty("metamaplite.document.inputtype", "freetext");
-            outputFormatOption = properties.getProperty("metamaplite.outputformat","mmi");
+            outputFormatOption = properties.getProperty("metamaplite.outputformat", "mmi");
             outputExtension = ".out";
             if (properties.getProperty("metamaplite.outputformat").equals("mmi")) {
                 properties.setProperty("metamaplite.outputextension", ".mmi");
@@ -1315,9 +1321,9 @@ public class MetaMapLiteServer {
                 outputExtension = properties.getProperty("metamaplite.outputextension");
             }
             listSentencesOption =
-                    Boolean.parseBoolean(properties.getProperty("metamaplite.list.sentences","false"));
+                    Boolean.parseBoolean(properties.getProperty("metamaplite.list.sentences", "false"));
             listAcronymsOption =
-                    Boolean.parseBoolean(properties.getProperty("metamaplite.list.acronyms","false"));
+                    Boolean.parseBoolean(properties.getProperty("metamaplite.list.acronyms", "false"));
             listSentencesWithPosTags =
                     Boolean.parseBoolean(properties.getProperty
                             ("metamaplite.list.sentences.with.postags", "false"));
@@ -1379,7 +1385,7 @@ public class MetaMapLiteServer {
                 } else if (listChunks) {
                     metaMapLiteInst.listChunks(documentList);
                 } else {
-                    metaMapLiteInst.listEntities(documentList,outputFormatOption);
+                    metaMapLiteInst.listEntities(documentList, outputFormatOption);
                 }
                 if (indicateCitationEnd) {
                     System.out.println(eotString); // should this be in Prolog format? Will 'EOT' suffice?
@@ -1401,7 +1407,7 @@ public class MetaMapLiteServer {
                     String url = filenameList.get(0);
 
                     String[] urlPort = url.split(":");
-                    String hostname = urlPort[1].replace("//","");
+                    String hostname = urlPort[1].replace("//", "");
                     int port = Integer.parseInt(urlPort[2]);
 
                     HttpServer server = HttpServer.create(new InetSocketAddress(hostname, port), 0);
@@ -1410,6 +1416,26 @@ public class MetaMapLiteServer {
                     server.start();
                     System.out.println("Started HTTP server at " + url);
                     System.out.println("Send filenames to " + url + "/process?filename=<filename>");
+                } else if (filenameList.get(0).startsWith("stdin")) {
+
+                    Scanner scanner = new Scanner(System.in);
+                    StringTokenizer st = new StringTokenizer(scanner.nextLine());
+
+                    String filename = scanner.nextLine();
+                    double procTime = 0.0;
+                    do {
+                        try {
+                            procTime = processFile(filename);
+                            System.out.println("{'status':'processed','procTime':" + procTime + ",'filename':'" + filename + "'}");
+
+                        } catch (Exception e) {
+                            System.out.println("{'status':'failed','procTime':" + procTime + ",'filename':'" + filename + "'}");
+                            logger.error("Could not process file:" + filename, e);
+                        }
+                        filename = scanner.nextLine();
+                    } while (!filename.equalsIgnoreCase("quit"));
+
+                    scanner.close();
 
 
                 } else {
@@ -1434,13 +1460,15 @@ public class MetaMapLiteServer {
         public void handle(HttpExchange t) throws IOException {
             URI uri = t.getRequestURI();
             String query = uri.getQuery();
-            String filename = query.replace("filename=","");
+            String filename = query.replace("filename=", "");
+            String response = "";
+            double procTime = 0;
             try {
-                processFile(filename);
+                procTime = processFile(filename);
+                response = "{'status':'processed','procTime':" + procTime + ",'filename':'" + filename + "'}";
             } catch (Exception e) {
-                throw new IOException(e);
+                response =  "{'status':'failed','procTime':" + procTime + ",'filename':'" + filename + "'}";
             }
-            String response = "Processed " + filename;
             t.sendResponseHeaders(200, response.length());
             OutputStream os = t.getResponseBody();
             os.write(response.getBytes());
@@ -1448,7 +1476,7 @@ public class MetaMapLiteServer {
         }
     }
 
-    private static void processFile(String filename) throws Exception {
+    private static double processFile(String filename) throws Exception {
         long startTime = System.currentTimeMillis();
 
         if (verbose) {
@@ -1470,14 +1498,15 @@ public class MetaMapLiteServer {
                     outputExtension, outputFormatOption,
                     indicateCitationEnd);
         }
+        float procTime = (System.currentTimeMillis() - startTime) / 1000l;
+
         if (verbose) {
-            double procTime = (System.currentTimeMillis() - startTime) / 1000.0;
-                    System.out.println("Finished processing " + filename + " in " + procTime + " seconds");
+            System.out.println("Finished processing " + filename + " in " + procTime + " seconds");
         }
 
+        return procTime;
+
     }
-
-
 
 
 }
