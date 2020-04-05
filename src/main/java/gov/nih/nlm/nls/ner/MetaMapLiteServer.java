@@ -1419,11 +1419,12 @@ public class MetaMapLiteServer {
                 } else if (filenameList.get(0).startsWith("stdin")) {
 
                     Scanner scanner = new Scanner(System.in);
-                    StringTokenizer st = new StringTokenizer(scanner.nextLine());
-
-                    String filename = scanner.nextLine();
                     double procTime = 0.0;
-                    do {
+                    while (scanner.hasNext()) {
+
+
+                        String filename = scanner.nextLine();
+
                         try {
                             procTime = processFile(filename);
                             System.out.println("{'status':'processed','procTime':" + procTime + ",'filename':'" + filename + "'}");
@@ -1432,8 +1433,9 @@ public class MetaMapLiteServer {
                             System.out.println("{'status':'failed','procTime':" + procTime + ",'filename':'" + filename + "'}");
                             logger.error("Could not process file:" + filename, e);
                         }
-                        filename = scanner.nextLine();
-                    } while (!filename.equalsIgnoreCase("quit"));
+
+                    }
+
 
                     scanner.close();
 
